@@ -4,7 +4,7 @@ services:
     environment:
       - APP_NAME=posts
       - APP_ENV=local
-      - APP_KEY=base64:aL6o/U2e1ziUTXsyTkfzNziH9l4crCISoWMwC8LX4B0=
+      - APP_KEY=${APP_KEY}
       - APP_DEBUG=true
       - APP_URL=http://localhost
       - LOG_CHANNEL=stack
@@ -37,7 +37,7 @@ services:
     image: ${API_IMAGE}
     environment:
     - APP_ENV=local
-    - APP_KEY=base64:aL6o/U2e1ziUTXsyTkfzNziH9l4crCISoWMwC8LX4B0=
+    - APP_KEY=${APP_KEY}
     - APP_DEBUG=true
     - LOG_CHANNEL=stack
     - LOG_LEVEL=debug

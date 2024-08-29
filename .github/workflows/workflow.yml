@@ -11,6 +11,7 @@ env:
   PROXY_IMAGE: jitusingh18/posts-proxy:${{ github.sha }}
   MYSQL_IMAGE: jitusingh18/posts-mysql:${{ github.sha }}
   FRONTEND_IMAGE: jitusingh18/posts-frontend:${{ github.sha }}
+  APP_KEY: ${{ secrets.APP_KEY }}
 
 jobs:
   tests:
@@ -25,15 +26,15 @@ jobs:
       - name: Build API image
         run: docker image build -t $API_IMAGE --target=api --build-arg user=app --build-arg uid=1000 -f ./api/Dockerfile .
       - name: Build MySQL image
-        run: docker image build -t $MYSQL_IMAGE -f ./Dockerfile.mysql .
+        run: docker image build -t $MYSQL_IMAGE --build-arg password=${{ secrets.DB_PASSWORD }} -f ./Dockerfile.mysql .
       - name: Run phpstan
         run: docker container run --rm -t $API_IMAGE ./vendor/bin/phpstan analyze --memory-limit=1G
       - name: Run phpinsights
         run: docker container run --rm -t $API_IMAGE php artisan insights --no-interaction --min-quality=90 --min-complexity=90 --min-architecture=90 --min-style=90 --ansi
       - name: Run tests
         run: |
-          docker-compose -f docker-compose.ci.yml up -d
-          docker-compose -f docker-compose.ci.yml exec -T api php artisan test
+          docker compose -f docker-compose.ci.yml up -d
+          docker compose -f docker-compose.ci.yml exec -T api php artisan test
       - name: Build scheduler image
         run: docker image build -t $SCHEDULER_IMAGE --target=scheduler --build-arg user=app --build-arg uid=1000 -f ./api/Dockerfile .
       - name: Build worker image
