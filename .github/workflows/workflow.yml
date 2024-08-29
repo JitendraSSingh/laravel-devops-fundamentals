@@ -1,0 +1,56 @@
+name: Tests
+
+on:
+  push:
+    branches: [ "main" ]
+env:
+  API_IMAGE: jitusingh18/posts-api:${{github.sha}}
+  SCHEDULER_IMAGE: jitusingh18/posts-scheduler:${{github.sha}}
+  WORKER_IMAGE: jitusingh18/posts-worker:${{ github.sha }}
+  NGINX_IMAGE: jitusingh18/posts-nginx:${{ github.sha }}
+  PROXY_IMAGE: jitusingh18/posts-proxy:${{ github.sha }}
+  MYSQL_IMAGE: jitusingh18/posts-mysql:${{ github.sha }}
+  FRONTEND_IMAGE: jitusingh18/posts-frontend:${{ github.sha }}
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build API image
+        run: docker image build -t $API_IMAGE --target=api --build-arg user=app --build-arg uid=1000 -f ./api/Dockerfile .
+      - name: Build MySQL image
+        run: docker image build -t $MYSQL_IMAGE -f ./Dockerfile.mysql .
+      - name: Run phpstan
+        run: docker container run --rm -t $API_IMAGE ./vendor/bin/phpstan analyze --memory-limit=1G
+      - name: Run phpinsights
+        run: docker container run --rm -t $API_IMAGE php artisan insights --no-interaction --min-quality=90 --min-complexity=90 --min-architecture=90 --min-style=90 --ansi
+      - name: Run tests
+        run: |
+          docker-compose -f docker-compose.ci.yml up -d
+          docker-compose -f docker-compose.ci.yml exec -T api php artisan test
+      - name: Build scheduler image
+        run: docker image build -t $SCHEDULER_IMAGE --target=scheduler --build-arg user=app --build-arg uid=1000 -f ./api/Dockerfile .
+      - name: Build worker image
+        run: docker image build -t $WORKER_IMAGE --target=worker --build-arg user=app --build-arg uid=1000 -f ./api/Dockerfile .
+      - name: Build nginx image
+        run: docker image build -t $NGINX_IMAGE -f ./Dockerfile.nginx .
+      - name: Build proxy image
+        run: docker image build -t $PROXY_IMAGE -f ./Dockerfile.proxy .
+      - name: Push API image
+        run: docker image push $API_IMAGE
+      - name: Push scheduler image
+        run: docker image push $SCHEDULER_IMAGE
+      - name: Push worker image
+        run: docker image push $WORKER_IMAGE
+      - name: Push nginx image
+        run: docker image push $PROXY_IMAGE
+      - name: Push MySQL image
+        run: docker image push $MYSQL_IMAGE
+      - name: Push proxy image
+        run: docker image push $PROXY_IMAGE
