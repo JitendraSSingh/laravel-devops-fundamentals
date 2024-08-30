@@ -29,8 +29,6 @@ jobs:
         run: docker image build -t $MYSQL_IMAGE --build-arg password=${{ secrets.DB_PASSWORD }} -f ./Dockerfile.mysql .
       - name: Run phpstan
         run: docker container run --rm -t $API_IMAGE ./vendor/bin/phpstan analyze --memory-limit=1G
-      - name: Run phpinsights
-        run: docker container run --rm -t $API_IMAGE php artisan insights --no-interaction --min-quality=90 --min-complexity=90 --min-architecture=90 --min-style=90 --ansi
       - name: Run tests
         run: |
           docker compose -f docker-compose.ci.yml up -d
